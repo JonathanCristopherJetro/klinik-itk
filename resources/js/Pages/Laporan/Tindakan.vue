@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { formatDateToLocalString } from '@/utils/date';
 import Card from 'primevue/card';
 import Button from 'primevue/button';
 import DataTable from 'primevue/datatable';
@@ -38,15 +39,15 @@ const endDate = ref(new Date(props.filters.end_date));
 
 const applyFilter = () => {
     router.get(route('laporan.tindakan'), {
-        start_date: startDate.value.toISOString().split('T')[0],
-        end_date: endDate.value.toISOString().split('T')[0],
+        start_date: formatDateToLocalString(startDate.value),
+        end_date: formatDateToLocalString(endDate.value),
     }, { preserveState: true });
 };
 
 const downloadPdf = () => {
     window.open(route('laporan.tindakan.pdf', {
-        start_date: startDate.value.toISOString().split('T')[0],
-        end_date: endDate.value.toISOString().split('T')[0],
+        start_date: formatDateToLocalString(startDate.value),
+        end_date: formatDateToLocalString(endDate.value),
     }), '_blank');
 };
 
@@ -90,14 +91,14 @@ const formatCurrency = (value: number) => {
                 <div class="flex flex-wrap items-center gap-4">
                     <div class="flex flex-col gap-1.5">
                         <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tanggal Mulai</span>
-                        <DatePicker v-model="startDate" dateFormat="dd/mm/yy" showIcon class="!border-gray-200 !rounded-xl !text-xs w-48 shadow-sm" inputClass="!py-2 !px-3 !text-xs" />
+                        <DatePicker v-model="startDate" dateFormat="dd/mm/yy" showIcon iconDisplay="input" class="w-44" inputClass="!border-gray-200 !rounded-xl !text-xs !py-2 !pl-3 !pr-10 shadow-sm w-full" />
                     </div>
                     <div class="flex items-center h-full mt-5">
                         <i class="pi pi-arrow-right text-gray-400"></i>
                     </div>
                     <div class="flex flex-col gap-1.5">
                         <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Tanggal Akhir</span>
-                        <DatePicker v-model="endDate" dateFormat="dd/mm/yy" showIcon class="!border-gray-200 !rounded-xl !text-xs w-48 shadow-sm" inputClass="!py-2 !px-3 !text-xs" />
+                        <DatePicker v-model="endDate" dateFormat="dd/mm/yy" showIcon iconDisplay="input" class="w-44" inputClass="!border-gray-200 !rounded-xl !text-xs !py-2 !pl-3 !pr-10 shadow-sm w-full" />
                     </div>
                     <div class="mt-5">
                         <Button label="Terapkan Filter" icon="pi pi-filter" @click="applyFilter" severity="success" class="!rounded-xl !text-xs font-bold shadow-sm !px-4 !py-2" />

@@ -23,8 +23,9 @@ class LaporanPemeriksaanUmumExport implements FromCollection, WithHeadings, With
     public function collection()
     {
         return RekamMedis::with(['pasien', 'anamnesis', 'pemeriksaan', 'pemeriksaan.tindakans'])
+            ->has('pasien')
             ->where('jenis_layanan', 'berobat')
-            ->whereBetween('tanggal_kunjungan', [$this->startDate, $this->endDate])
+            ->whereBetween('tanggal_kunjungan', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59'])
             ->orderBy('tanggal_kunjungan', 'desc')
             ->get();
     }
@@ -61,6 +62,7 @@ class LaporanPemeriksaanUmumExport implements FromCollection, WithHeadings, With
             'Berat Badan',
             'Tinggi Badan',
             'IMT',
+            'Kondisi Khusus',
             'Skala Nyeri',
             'Pemeriksaan Fisik Lain',
             'Dokter penanggung jawab',
@@ -130,6 +132,7 @@ class LaporanPemeriksaanUmumExport implements FromCollection, WithHeadings, With
             $anamnesis ? $anamnesis->berat_badan : '-',
             $anamnesis ? $anamnesis->tinggi_badan : '-',
             $imt,
+            $pasien && $pasien->jenis_kelamin === 'P' && $anamnesis ? ($anamnesis->is_hamil ? 'Hamil' : ($anamnesis->is_menyusui ? 'Menyusui' : '-')) : '-',
             $anamnesis ? $anamnesis->skala_nyeri : '-',
             $pemeriksaan ? $pemeriksaan->pemeriksaan_fisik : '-',
             $pemeriksaan && $pemeriksaan->dokter ? $pemeriksaan->dokter->name : '-',

@@ -135,12 +135,17 @@
             <tr>
                 <th style="width: 30px;">No</th>
                 <th style="width: 80px;">No. Kunjungan</th>
-                <th style="width: 70px;">Tanggal</th>
+                <th style="width: 60px;">Tanggal</th>
                 <th>Pasien</th>
-                <th style="width: 70px;">Tipe</th>
-                <th style="width: 80px;">Layanan</th>
-                <th>Dokter</th>
-                <th style="width: 70px;">Status</th>
+                <th style="width: 70px;">Jenis Kelamin</th>
+                @if($tab === 'screening')
+                    <th style="width: 90px;">Layanan</th>
+                @endif
+                <th style="width: 100px;">Status</th>
+                @if($tab === 'umum')
+                    <th>Diagnosis</th>
+                    <th>Tindakan</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -151,11 +156,16 @@
                 <td>{{ $item->tanggal_kunjungan->format('d/m/Y') }}</td>
                 <td>
                     <strong>{{ $item->pasien?->nama ?? '-' }}</strong><br>
-                    <small>{{ $item->pasien?->nomor_rm ?? '-' }}</small>
+                    <small>{{ $item->pasien?->nomor_rm ?? '-' }} ({{ ucfirst($item->pasien?->tipe_pasien ?? '-') }})</small>
                 </td>
-                <td>{{ ucfirst($item->pasien?->tipe_pasien ?? '-') }}</td>
-                <td>{{ ucfirst(str_replace('_', ' ', $item->jenis_layanan)) }}</td>
-                <td>{{ $item->dokter?->name ?? '-' }}</td>
+                <td>
+                    {{ $item->pasien?->jenis_kelamin === 'L' ? 'Laki-laki' : ($item->pasien?->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}
+                </td>
+                @if($tab === 'screening')
+                <td>
+                    {{ $item->jenis_layanan === 'berobat' ? 'Pemeriksaan Umum' : ucfirst(str_replace('_', ' ', $item->jenis_layanan)) }}
+                </td>
+                @endif
                 <td>
                     @if($item->status === 'selesai')
                         <span class="status-selesai">Selesai</span>
@@ -165,10 +175,33 @@
                         <span class="status-menunggu">{{ ucfirst(str_replace('_', ' ', $item->status)) }}</span>
                     @endif
                 </td>
+                @if($tab === 'umum')
+                <td>
+                    @if($item->pemeriksaan?->diagnosis_utama)
+                        <strong>{{ $item->pemeriksaan->diagnosis_utama }}</strong>
+                        @if($item->pemeriksaan->diagnosis_sekunder)
+                            <br><small style="color: #666;">{{ $item->pemeriksaan->diagnosis_sekunder }}</small>
+                        @endif
+                    @else
+                        -
+                    @endif
+                </td>
+                <td>
+                    @if($item->pemeriksaan?->tindakans && $item->pemeriksaan->tindakans->count() > 0)
+                        <ul style="margin: 0; padding-left: 15px; font-size: 8px;">
+                            @foreach($item->pemeriksaan->tindakans as $tindakan)
+                                <li>{{ $tindakan->nama }}</li>
+                            @endforeach
+                        </ul>
+                    @else
+                        -
+                    @endif
+                </td>
+                @endif
             </tr>
             @empty
             <tr>
-                <td colspan="8" style="text-align: center;">Tidak ada data kunjungan</td>
+                <td colspan="{{ $tab === 'screening' ? 7 : 8 }}" style="text-align: center;">Tidak ada data kunjungan</td>
             </tr>
             @endforelse
         </tbody>

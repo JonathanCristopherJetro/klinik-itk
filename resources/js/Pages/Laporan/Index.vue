@@ -44,6 +44,14 @@ const reports = [
         bgGlow: 'bg-rose-500/10',
         route: 'laporan.screening',
     },
+    {
+        title: 'Laporan Diagnosis (ICD)',
+        description: 'Rekapitulasi 10 penyakit terbanyak dan keseluruhan hasil diagnosis pasien (ICD-10)',
+        icon: 'pi-file-edit',
+        gradient: 'from-violet-500 to-purple-600',
+        bgGlow: 'bg-violet-500/10',
+        route: 'laporan.diagnosis',
+    },
 ];
 </script>
 
@@ -138,7 +146,7 @@ const reports = [
                                 <i class="pi pi-lock text-amber-400"></i>
                                 <span class="font-bold text-white text-sm">Keamanan Data</span>
                             </div>
-                            <p class="text-xs text-slate-400 leading-relaxed">Semua hasil *export* bersifat rahasia dan hanya dapat diakses oleh Anda (Super Admin/Admin).</p>
+                            <p class="text-xs text-slate-400 leading-relaxed">Semua hasil *export* bersifat rahasia dan hanya dapat diakses oleh Anda (Super Admin/Admin/Dokter/Perawat).</p>
                         </div>
                     </div>
                 </div>

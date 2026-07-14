@@ -13,6 +13,7 @@ import Card from 'primevue/card';
 import Checkbox from 'primevue/checkbox';
 import InputNumber from 'primevue/inputnumber';
 import Select from 'primevue/select';
+import AutoComplete from 'primevue/autocomplete';
 import DatePicker from 'primevue/datepicker';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
@@ -99,8 +100,9 @@ const selectedPasien = ref<AntrianItem | null>(null);
 const searchSelesai = ref(props.filters?.searchSelesai || '');
 const searchAntrian = ref('');
 const searchTerlewat = ref('');
+const searchSuratSehat = ref('');
 const filterTanggal = ref(props.filters?.tanggal_selesai ? new Date(props.filters.tanggal_selesai) : null);
-const activeTab = ref(props.filters?.is_filtered ? '1' : '0');
+const activeTab = ref((typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : null) || (props.filters?.is_filtered ? '1' : '0'));
 
 const filterJenisLayanan = ref(props.filters?.jenis_layanan === 'semua' ? '' : (props.filters?.jenis_layanan || ''));
 const filterTipePasien = ref(props.filters?.tipe_pasien === 'semua' ? '' : (props.filters?.tipe_pasien || ''));
@@ -113,6 +115,7 @@ const sortOptions = [
     { label: 'No. Kunjungan', value: { field: 'nomor_kunjungan', order: 1 } },
 ];
 const selectedSort = ref(sortOptions[0].value);
+const selectedSortSuratSehat = ref(sortOptions[0].value);
 
 
 const doFilterSelesai = () => {
@@ -136,6 +139,8 @@ const applyGlobalFilter = () => {
     if (Object.keys(params).length > 0) {
         params.is_filtered = 1;
     }
+    
+    params.tab = activeTab.value;
     
     router.get(route('dokter.antrian'), params, { 
         preserveState: true,
@@ -182,10 +187,68 @@ const golonganDarahOptions = [
     { label: 'Tidak Tahu', value: 'Tidak Tahu' }
 ];
 
+const prognosisOptions = [
+    { label: 'Baik', value: 'Baik' },
+    { label: 'Sedang', value: 'Sedang' },
+    { label: 'Buruk', value: 'Buruk' }
+];
+
+
 const butaWarnaOptions = [
     { label: 'Tidak Buta Warna', value: 'Tidak Buta Warna' },
     { label: 'Buta Warna', value: 'Buta Warna' }
 ];
+
+const icd10List = [
+  "A01.0 - Demam tifoid (Typhoid fever)",
+  "A09 - Diare dan gastroenteritis oleh penyebab infeksi presumtif",
+  "A90 - Demam dengue (Dengue fever)",
+  "B01 - Varisela (Cacar air)",
+  "E11 - Diabetes mellitus tipe 2",
+  "E78.5 - Hiperlipidemia, tidak spesifik",
+  "H10 - Konjungtivitis",
+  "I10 - Hipertensi esensial (primer)",
+  "J00 - Nasofaringitis akut (common cold)",
+  "J01 - Sinusitis akut",
+  "J02 - Faringitis akut",
+  "J03 - Tonsilitis akut",
+  "J06 - Infeksi saluran pernapasan atas akut (ISPA) multiple/tidak spesifik",
+  "J44.9 - Penyakit paru obstruktif kronik (PPOK), tidak spesifik",
+  "J45 - Asma",
+  "K02 - Karies gigi",
+  "K04 - Penyakit pulpa dan jaringan periapikal",
+  "K05 - Gingivitis dan penyakit periodontal",
+  "K29.7 - Gastritis, tidak spesifik",
+  "K30 - Dispepsia",
+  "L20 - Dermatitis atopik",
+  "L23 - Dermatitis kontak alergi",
+  "M15 - Poliartrosis",
+  "M19.9 - Artrosis, tidak spesifik",
+  "M54.5 - Low back pain (Nyeri punggung bawah)",
+  "M79.1 - Myalgia (Nyeri otot)",
+  "N39.0 - Infeksi saluran kemih (ISK), lokasi tidak spesifik",
+  "R10 - Nyeri perut dan panggul",
+  "R42 - Pusing dan giddiness (Vertigo)",
+  "R50.9 - Demam, tidak spesifik (Fever, unspecified)",
+  "R51 - Sakit kepala (Headache)",
+  "Z00.0 - Pemeriksaan medis umum"
+];
+
+const filteredDiagnoses = ref<string[]>([]);
+
+const searchDiagnosis = (event: any) => {
+    const query = event.query.toLowerCase();
+    filteredDiagnoses.value = icd10List.filter(item => item.toLowerCase().includes(query));
+};
+
+const onDiagnosisSelect = (event: any) => {
+    const selected = event.value;
+    const parts = selected.split(' - ');
+    if (parts.length > 1) {
+        form.kode_icd10 = parts[0];
+        form.diagnosis_utama = parts.slice(1).join(' - ');
+    }
+};
 
 const jenisSuratOptions = [
     { label: 'Surat Keterangan Sehat', value: 'surat_sehat' },
@@ -372,8 +435,8 @@ const filteredUmum = computed(() => {
 
 const filteredSuratSehat = computed(() => {
     let list = props.antrian.filter(item => item.jenis_layanan === 'surat_sehat');
-    if (!searchAntrian.value) return list;
-    const s = searchAntrian.value.toLowerCase();
+    if (!searchSuratSehat.value) return list;
+    const s = searchSuratSehat.value.toLowerCase();
     return list.filter(item => 
         item.pasien.nama.toLowerCase().includes(s) || 
         item.pasien.nomor_rm.toLowerCase().includes(s) ||
@@ -624,6 +687,14 @@ const getTipePasienLabel = (tipe: string) => {
                                         @click="openPemeriksaanDialog(data)"
                                         class="!rounded-xl !text-[11px] !py-2 !px-4 shadow-sm hover:shadow-md hover:shadow-emerald-100 transition-all font-bold"
                                     />
+                                    <Link :href="route('pasien.rekam-medis', data.pasien.id)" v-if="canProcessPemeriksaan">
+                                        <Button
+                                            icon="pi pi-folder-open"
+                                            severity="info"
+                                            class="!rounded-xl !w-9 !h-9 shadow-sm hover:shadow-md transition-all"
+                                            v-tooltip.top="'Lihat Rekam Medis'"
+                                        />
+                                    </Link>
                                     <Button
                                         v-if="canManageAntrian"
                                         icon="pi pi-trash"
@@ -736,9 +807,17 @@ const getTipePasienLabel = (tipe: string) => {
                                         v-if="canProcessPemeriksaan"
                                         label="Periksa"
                                         severity="success"
-                                        class="!rounded-xl !text-[11px] !py-2 !px-4 shadow-sm hover:shadow-md transition-all font-bold w-full flex justify-center text-center"
+                                        class="!rounded-xl !text-[11px] !py-2 !px-4 shadow-sm hover:shadow-md transition-all font-bold flex-1 justify-center text-center"
                                         @click="openPemeriksaanDialog(data)"
                                     />
+                                    <Link :href="route('pasien.rekam-medis', data.pasien.id)" v-if="canProcessPemeriksaan">
+                                        <Button
+                                            icon="pi pi-folder-open"
+                                            severity="info"
+                                            class="!rounded-xl !w-9 !h-9 shadow-sm hover:shadow-md transition-all"
+                                            v-tooltip.top="'Lihat Rekam Medis'"
+                                        />
+                                    </Link>
                                     <Button
                                         v-if="canManageAntrian"
                                         icon="pi pi-trash"
@@ -986,6 +1065,47 @@ const getTipePasienLabel = (tipe: string) => {
                             <span class="w-2 h-6 bg-purple-500 rounded-full"></span>
                             Daftar Surat Sehat Pasien
                         </h3>
+                        
+                        <div class="bg-gray-50/50 p-4 rounded-xl border border-gray-100 w-full max-w-xl shadow-sm space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <!-- Field: Search -->
+                                <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Cari Pasien</span>
+                                    <InputGroup class="!shadow-sm !rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-purple-500/20 transition-all">
+                                        <InputGroupAddon class="!bg-white !border-0 !px-3">
+                                            <i class="pi pi-search text-purple-500 text-[10px]"></i>
+                                        </InputGroupAddon>
+                                        <InputText
+                                            v-model="searchSuratSehat"
+                                            placeholder="Nama / RM / No. Kunj..."
+                                            class="!border-0 !text-xs !py-2 !pl-0 focus:!ring-0 placeholder:text-gray-300"
+                                        />
+                                    </InputGroup>
+                                </div>
+
+                                <!-- Field: Sort -->
+                                <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Urutan Antrian</span>
+                                    <InputGroup class="!shadow-sm !rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-purple-500/20 transition-all">
+                                        <InputGroupAddon class="!bg-white !border-0 !px-3">
+                                            <i class="pi pi-sort-alt text-purple-500 text-[10px]"></i>
+                                        </InputGroupAddon>
+                                        <Select 
+                                            v-model="selectedSortSuratSehat" 
+                                            :options="sortOptions" 
+                                            optionLabel="label" 
+                                            optionValue="value"
+                                            placeholder="Urutkan" 
+                                            class="!border-0 !text-xs !py-0 focus:!ring-0 flex-1"
+                                            :pt="{
+                                                root: { class: '!border-0 !shadow-none' },
+                                                label: { class: '!py-2 !px-0 !text-xs' }
+                                            }"
+                                        />
+                                    </InputGroup>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <DataTable
@@ -997,6 +1117,8 @@ const getTipePasienLabel = (tipe: string) => {
                         class="p-datatable-sm"
                         stripedRows
                         emptyMessage="Tidak ada antrian surat sehat"
+                        :sortField="selectedSortSuratSehat.field"
+                        :sortOrder="selectedSortSuratSehat.order"
                     >
                         <Column header="No" style="width: 60px">
                             <template #body="{ index }">
@@ -1046,9 +1168,17 @@ const getTipePasienLabel = (tipe: string) => {
                                         v-if="canProcessPemeriksaan"
                                         label="Verifikasi"
                                         severity="success"
-                                        class="!rounded-xl !text-[11px] !py-2 !px-4 shadow-sm hover:shadow-md transition-all font-bold w-full flex justify-center text-center"
+                                        class="!rounded-xl !text-[11px] !py-2 !px-4 shadow-sm hover:shadow-md transition-all font-bold flex-1 justify-center text-center"
                                         @click="openPemeriksaanDialog(data)"
                                     />
+                                    <Link :href="route('pasien.rekam-medis', data.pasien.id)" v-if="canProcessPemeriksaan">
+                                        <Button
+                                            icon="pi pi-folder-open"
+                                            severity="info"
+                                            class="!rounded-xl !w-9 !h-9 shadow-sm hover:shadow-md transition-all"
+                                            v-tooltip.top="'Lihat Rekam Medis'"
+                                        />
+                                    </Link>
                                 </div>
                             </template>
                         </Column>
@@ -1067,9 +1197,90 @@ const getTipePasienLabel = (tipe: string) => {
                             <span class="w-2 h-6 bg-teal-500 rounded-full"></span>
                             Riwayat Surat Sehat & Cetak Surat
                         </h3>
-                        <p class="text-sm text-gray-500 ml-4">
+                        <p class="text-sm text-gray-500 ml-4 mb-4">
                             Butuh Admin/Super Admin untuk mengisi nomor surat dan mencetak surat sehat pasien di bawah ini.
                         </p>
+
+                        <div class="bg-gray-50/50 p-4 rounded-xl border border-gray-100 w-full max-w-xl shadow-sm space-y-3">
+                            <div class="flex flex-col gap-1.5">
+                                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Cari Nama / Nomor Rekam Medis</span>
+                                <InputGroup class="!shadow-sm !rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all">
+                                    <InputGroupAddon class="!bg-white !border-0 !px-3">
+                                        <i class="pi pi-search text-teal-500 text-[10px]"></i>
+                                    </InputGroupAddon>
+                                    <InputText
+                                        v-model="searchSelesai"
+                                        placeholder="Ketik di sini..."
+                                        class="!border-0 !text-xs !py-2 !pl-0 focus:!ring-0 placeholder:text-gray-300"
+                                        @keyup.enter="doFilterSelesai"
+                                    />
+                                </InputGroup>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Field: Date Picker -->
+                                <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Filter Tanggal Pemeriksaan</span>
+                                    <InputGroup class="!shadow-sm !rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all">
+                                        <InputGroupAddon class="!bg-white !border-0 !px-3">
+                                            <i class="pi pi-calendar text-teal-500 text-[10px]"></i>
+                                        </InputGroupAddon>
+                                        <DatePicker 
+                                            v-model="filterTanggal" 
+                                            dateFormat="dd/mm/yy"
+                                            placeholder="Pilih Tanggal"
+                                            class="!border-0 !text-xs !py-0 focus:!ring-0 flex-1"
+                                            inputClass="!border-0 !p-0 !h-9 !text-xs"
+                                            :showClear="true"
+                                            @date-select="doFilterSelesai"
+                                            @clear="doFilterSelesai"
+                                        />
+                                    </InputGroup>
+                                </div>
+
+                                <!-- Field: Sort -->
+                                <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Urutan Data</span>
+                                    <InputGroup class="!shadow-sm !rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all">
+                                        <InputGroupAddon class="!bg-white !border-0 !px-3">
+                                            <i class="pi pi-sort-alt text-teal-500 text-[10px]"></i>
+                                        </InputGroupAddon>
+                                        <Select 
+                                            v-model="selectedSort" 
+                                            :options="sortOptions" 
+                                            optionLabel="label" 
+                                            optionValue="value"
+                                            placeholder="Urutkan" 
+                                            class="!border-0 !text-xs !py-0 focus:!ring-0 flex-1"
+                                            :pt="{
+                                                root: { class: '!border-0 !shadow-none' },
+                                                label: { class: '!py-2 !px-0 !text-xs' }
+                                            }"
+                                        />
+                                    </InputGroup>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex items-center gap-2 pt-1">
+                                <Button 
+                                    label="Tampilkan Pasien" 
+                                    icon="pi pi-search" 
+                                    severity="info" 
+                                    @click="doFilterSelesai" 
+                                    class="!rounded-xl flex-1 h-9 shadow-sm !text-[11px] font-bold transition-all hover:shadow-md hover:shadow-teal-100" 
+                                />
+                                <Button 
+                                    v-if="searchSelesai || filterTanggal || props.filters?.is_filtered"
+                                    icon="pi pi-refresh" 
+                                    severity="secondary" 
+                                    outlined
+                                    class="!rounded-xl h-9 w-9"
+                                    title="Reset"
+                                    @click="() => { searchSelesai = ''; filterTanggal = null; router.get(route('dokter.antrian'), { tab: '4' }, { replace: true }); }"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <DataTable
@@ -1081,6 +1292,8 @@ const getTipePasienLabel = (tipe: string) => {
                         class="p-datatable-sm"
                         stripedRows
                         emptyMessage="Tidak ada riwayat surat sehat"
+                        :sortField="selectedSort.field"
+                        :sortOrder="selectedSort.order"
                     >
                         <Column header="No" style="width: 60px">
                             <template #body="{ index }">
@@ -1305,10 +1518,14 @@ const getTipePasienLabel = (tipe: string) => {
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-2">
                         <label class="font-medium text-sm">Diagnosis Utama <span class="text-red-500">*</span></label>
-                        <Textarea
+                        <AutoComplete
                             v-model="form.diagnosis_utama"
-                            rows="2"
-                            placeholder="Masukkan diagnosis utama"
+                            :suggestions="filteredDiagnoses"
+                            @complete="searchDiagnosis"
+                            @item-select="onDiagnosisSelect"
+                            placeholder="Ketik diagnosis atau kode ICD-10..."
+                            class="w-full"
+                            inputClass="w-full !rounded-xl"
                             :class="{ 'p-invalid': form.errors.diagnosis_utama }"
                         />
                         <small v-if="form.errors.diagnosis_utama" class="text-red-500">{{ form.errors.diagnosis_utama }}</small>
@@ -1337,9 +1554,13 @@ const getTipePasienLabel = (tipe: string) => {
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="font-medium text-sm">Prognosis</label>
-                        <InputText
+                        <Select
                             v-model="form.prognosis"
-                            placeholder="Baik / Sedang / Buruk"
+                            :options="prognosisOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="Pilih prognosis"
+                            class="w-full"
                             :class="{ 'p-invalid': form.errors.prognosis }"
                         />
                         <small v-if="form.errors.prognosis" class="text-red-500">{{ form.errors.prognosis }}</small>

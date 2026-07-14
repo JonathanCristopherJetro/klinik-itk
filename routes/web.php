@@ -101,7 +101,7 @@ Route::middleware('auth')->group(function () {
     // =====================
     // LAPORAN ROUTES
     // =====================
-    Route::middleware('role:superadmin,admin,dokter')->group(function () {
+    Route::middleware('role:superadmin,admin,dokter,perawat')->group(function () {
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/kunjungan', [LaporanController::class, 'kunjungan'])->name('laporan.kunjungan');
         Route::get('/laporan/obat', [LaporanController::class, 'obat'])->name('laporan.obat');
@@ -115,6 +115,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/laporan/screening', [LaporanController::class, 'screening'])->name('laporan.screening');
         Route::get('/laporan/screening/pdf', [LaporanController::class, 'screeningPdf'])->name('laporan.screening.pdf');
         Route::get('/laporan/screening/excel', [LaporanController::class, 'screeningExcel'])->name('laporan.screening.excel');
+        Route::get('/laporan/diagnosis', [LaporanController::class, 'diagnosis'])->name('laporan.diagnosis');
+        Route::get('/laporan/diagnosis/pdf', [LaporanController::class, 'diagnosisPdf'])->name('laporan.diagnosis.pdf');
     });
 
     // =====================
@@ -141,6 +143,9 @@ Route::middleware('auth')->group(function () {
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
         Route::post('/users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
+        
+        // Hapus Rekam Medis
+        Route::delete('/rekam-medis/{rekamMedis}', [RekamMedisController::class, 'destroy'])->name('rekam-medis.destroy');
     });
 
     // =====================

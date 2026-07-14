@@ -13,17 +13,13 @@ import Card from 'primevue/card';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import Select from 'primevue/select';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
 import { useToast } from 'primevue/usetoast';
 import Swal from 'sweetalert2';
 
 interface Props {
-    obats: {
-        data: Obat[];
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-    };
+    obats: Obat[];
     filters: {
         search?: string;
     };
@@ -57,7 +53,7 @@ const statusOptions = [
 ];
 
 const filteredObats = computed(() => {
-    let result = props.obats.data;
+    let result = props.obats;
     
     if (search.value) {
         const s = search.value.toLowerCase();
@@ -80,9 +76,9 @@ const filteredObats = computed(() => {
 });
 
 const summaryStats = computed(() => {
-    const total = props.obats.data.length;
-    const lowStock = props.obats.data.filter(o => o.stok <= (o.stok_minimum || 10)).length;
-    const active = props.obats.data.filter(o => o.is_active).length;
+    const total = props.obats.length;
+    const lowStock = props.obats.filter(o => o.stok <= (o.stok_minimum || 10)).length;
+    const active = props.obats.filter(o => o.is_active).length;
     return { total, lowStock, active };
 });
 
@@ -260,52 +256,80 @@ const formatCurrency = (value: number) => {
                             />
                         </div>
 
-                        <div class="bg-gray-50/50 p-4 rounded-xl border border-gray-100 w-full shadow-sm space-y-4">
-                            <div class="flex flex-wrap items-end gap-3">
-                                <div class="flex flex-col gap-1.5 min-w-[250px]">
+                        <div class="bg-gray-50/50 p-4 rounded-xl border border-gray-100 w-full max-w-2xl shadow-sm space-y-3">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                                <!-- Field: Cari Obat -->
+                                <div class="flex flex-col gap-1.5">
                                     <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Cari Obat</span>
-                                    <div class="w-full">
+                                    <InputGroup class="!shadow-sm !rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+                                        <InputGroupAddon class="!bg-white !border-0 !px-3">
+                                            <i class="pi pi-search text-emerald-500 text-[10px]"></i>
+                                        </InputGroupAddon>
                                         <InputText
                                             v-model="search"
                                             placeholder="Kode atau nama obat..."
-                                            class="!w-full !border-gray-200 !rounded-xl !text-xs shadow-sm focus:!ring-emerald-500/20"
+                                            class="!border-0 !text-xs !py-2 !pl-0 focus:!ring-0 placeholder:text-gray-300"
                                             @keyup.enter="doSearch"
+                                        />
+                                    </InputGroup>
+                                </div>
+
+                                <!-- Field: Jenis -->
+                                <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Jenis</span>
+                                    <InputGroup class="!shadow-sm !rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+                                        <InputGroupAddon class="!bg-white !border-0 !px-3">
+                                            <i class="pi pi-tag text-emerald-500 text-[10px]"></i>
+                                        </InputGroupAddon>
+                                        <Select
+                                            v-model="filterJenis"
+                                            :options="commonJenis"
+                                            optionLabel="label"
+                                            optionValue="value"
+                                            placeholder="Pilih Jenis"
+                                            class="!border-0 !text-xs !py-0 focus:!ring-0 flex-1"
+                                            :pt="{
+                                                root: { class: '!border-0 !shadow-none' },
+                                                label: { class: '!text-xs !py-2 !pl-0' },
+                                                dropdownIcon: { class: '!w-3 !h-3 text-emerald-500' }
+                                            }"
+                                        />
+                                    </InputGroup>
+                                </div>
+
+                                <!-- Field: Status -->
+                                <div class="flex flex-col gap-1.5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Status</span>
+                                    <div class="flex gap-2 items-center">
+                                        <InputGroup class="!shadow-sm !rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all flex-1">
+                                            <InputGroupAddon class="!bg-white !border-0 !px-3">
+                                                <i class="pi pi-check-circle text-emerald-500 text-[10px]"></i>
+                                            </InputGroupAddon>
+                                            <Select
+                                                v-model="filterStatus"
+                                                :options="statusOptions"
+                                                optionLabel="label"
+                                                optionValue="value"
+                                                placeholder="Pilih Status"
+                                                class="!border-0 !text-xs !py-0 focus:!ring-0 flex-1"
+                                                :pt="{
+                                                    root: { class: '!border-0 !shadow-none' },
+                                                    label: { class: '!text-xs !py-2 !pl-0' },
+                                                    dropdownIcon: { class: '!w-3 !h-3 text-emerald-500' }
+                                                }"
+                                            />
+                                        </InputGroup>
+                                        
+                                        <Button 
+                                            icon="pi pi-filter-slash" 
+                                            severity="secondary" 
+                                            text 
+                                            v-tooltip.top="'Bersihkan Filter'"
+                                            class="!rounded-xl !p-2 !h-9 !w-9 flex items-center justify-center border border-gray-200 hover:bg-gray-100 bg-white shrink-0"
+                                            @click="clearFilters" 
                                         />
                                     </div>
                                 </div>
-
-                                <div class="flex flex-col gap-1.5 min-w-[150px]">
-                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Jenis</span>
-                                    <Select
-                                        v-model="filterJenis"
-                                        :options="commonJenis"
-                                        optionLabel="label"
-                                        optionValue="value"
-                                        placeholder="Pilih Jenis"
-                                        class="!border-gray-200 !rounded-xl !text-xs w-full shadow-sm"
-                                    />
-                                </div>
-
-                                <div class="flex flex-col gap-1.5 min-w-[150px]">
-                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest ml-1">Status</span>
-                                    <Select
-                                        v-model="filterStatus"
-                                        :options="statusOptions"
-                                        optionLabel="label"
-                                        optionValue="value"
-                                        placeholder="Pilih Status"
-                                        class="!border-gray-200 !rounded-xl !text-xs w-full shadow-sm"
-                                    />
-                                </div>
-
-                                <Button 
-                                    icon="pi pi-filter-slash" 
-                                    severity="secondary" 
-                                    text 
-                                    v-tooltip.top="'Bersihkan Filter'"
-                                    class="!rounded-xl"
-                                    @click="clearFilters" 
-                                />
                             </div>
                         </div>
                     </div>
@@ -408,39 +432,39 @@ const formatCurrency = (value: number) => {
             <div class="space-y-4">
                 <div class="flex flex-col gap-2">
                     <label class="font-medium text-sm">Kode Obat <span class="text-red-500">*</span></label>
-                    <InputText v-model="form.kode" placeholder="Contoh: OBT0001" />
+                    <InputText v-model="form.kode" placeholder="Contoh: OBT0001" class="w-full" />
                 </div>
                 <div class="flex flex-col gap-2">
                     <label class="font-medium text-sm">Nama Obat <span class="text-red-500">*</span></label>
-                    <InputText v-model="form.nama" placeholder="Nama obat" />
+                    <InputText v-model="form.nama" placeholder="Nama obat" class="w-full" />
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-2">
                         <label class="font-medium text-sm">Jenis</label>
-                        <InputText v-model="form.jenis" placeholder="Tablet, Sirup, Salep, dll" />
+                        <InputText v-model="form.jenis" placeholder="Tablet, Sirup, Salep, dll" class="w-full" />
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="font-medium text-sm">Satuan <span class="text-red-500">*</span></label>
-                        <InputText v-model="form.satuan" placeholder="Tablet, Kapsul, Botol, dll" />
+                        <InputText v-model="form.satuan" placeholder="Tablet, Kapsul, Botol, dll" class="w-full" />
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-2">
                         <label class="font-medium text-sm">Stok <span class="text-red-500">*</span></label>
-                        <InputNumber v-model="form.stok" :min="0" />
+                        <InputNumber v-model="form.stok" :min="0" class="w-full" />
                     </div>
                     <div class="flex flex-col gap-2">
                         <label class="font-medium text-sm">Stok Minimum</label>
-                        <InputNumber v-model="form.stok_minimum" :min="0" placeholder="10" />
+                        <InputNumber v-model="form.stok_minimum" :min="0" placeholder="10" class="w-full" />
                     </div>
                 </div>
                 <div class="flex flex-col gap-2">
                     <label class="font-medium text-sm">Harga <span class="text-red-500">*</span></label>
-                    <InputNumber v-model="form.harga" :min="0" mode="currency" currency="IDR" locale="id-ID" />
+                    <InputNumber v-model="form.harga" :min="0" mode="currency" currency="IDR" locale="id-ID" class="w-full" />
                 </div>
                 <div class="flex flex-col gap-2">
                     <label class="font-medium text-sm">Keterangan</label>
-                    <Textarea v-model="form.keterangan" rows="2" placeholder="Keterangan tambahan" />
+                    <Textarea v-model="form.keterangan" rows="2" placeholder="Keterangan tambahan" class="w-full" />
                 </div>
                 <div class="flex flex-col gap-2" v-if="isEdit">
                     <label class="font-medium text-sm">Status <span class="text-red-500">*</span></label>

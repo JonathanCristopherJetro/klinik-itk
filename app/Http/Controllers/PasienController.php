@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pasien;
 use App\Models\RekamMedis;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class PasienController extends Controller
@@ -36,18 +37,40 @@ class PasienController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $draftPasiens = Pasien::where('is_draft', true)->orderBy('created_at', 'desc')->get();
+        $query = Pasien::where('is_draft', true);
+
+        if ($request->search) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                  ->orWhere('nik', 'like', "%{$search}%")
+                  ->orWhere('nomor_rm', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->tipe_pasien) {
+            $query->where('tipe_pasien', $request->tipe_pasien);
+        }
+
+        $draftPasiens = $query->orderBy('created_at', 'desc')->get();
+
         return Inertia::render('Pasien/Create', [
-            'draftPasiens' => $draftPasiens
+            'draftPasiens' => $draftPasiens,
+            'filters' => $request->only(['search', 'tipe_pasien']),
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nik' => 'required|string|size:16|unique:pasiens,nik',
+            'nik' => [
+                'required',
+                'string',
+                'size:16',
+                Rule::unique('pasiens', 'nik')->whereNull('deleted_at'),
+            ],
             'nama' => 'required|string|max:255',
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'required|in:L,P',
@@ -59,7 +82,7 @@ class PasienController extends Controller
             'nim_nip' => 'nullable|string|max:50',
             'fakultas' => 'nullable|string|max:100',
             'program_studi' => 'nullable|string|max:100',
-            'pekerjaan' => 'nullable|in:pns,pppk,swasta,wiraswasta,pelajar_mahasiswa,lainnya',
+            'pekerjaan' => 'nullable|in:pns,pppk,swasta,wiraswasta,pelajar_mahasiswa,dosen,tenaga_kependidikan,lainnya',
             'status_perkawinan' => 'nullable|in:belum_kawin,kawin,cerai_hidup,cerai_mati',
             'agama' => 'nullable|in:islam,kristen,katolik,hindu,buddha,konghucu,lainnya',
             'pendidikan_terakhir' => 'nullable|in:sd,smp,sma_smk,d1,d2,d3,d4_s1,s2,s3',
@@ -94,6 +117,17 @@ class PasienController extends Controller
 
     public function activate(Pasien $pasien)
     {
+        // Periksa apakah ada pasien aktif lain dengan NIK yang sama
+        $activePasienExists = Pasien::where('nik', $pasien->nik)
+            ->where('is_draft', false)
+            ->where('id', '!=', $pasien->id)
+            ->exists();
+
+        if ($activePasienExists) {
+            return redirect()->back()
+                ->with('error', 'Pasien dengan NIK tersebut sudah terdaftar di Daftar Pasien Utama.');
+        }
+
         $pasien->update(['is_draft' => false]);
         return redirect()->back()
             ->with('success', 'Pasien berhasil dipindahkan ke Daftar Pasien Utama.');
@@ -138,7 +172,12 @@ class PasienController extends Controller
     public function update(Request $request, Pasien $pasien)
     {
         $validated = $request->validate([
-            'nik' => 'required|string|size:16|unique:pasiens,nik,' . $pasien->id,
+            'nik' => [
+                'required',
+                'string',
+                'size:16',
+                Rule::unique('pasiens', 'nik')->ignore($pasien->id)->whereNull('deleted_at'),
+            ],
             'nama' => 'required|string|max:255',
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'required|in:L,P',
@@ -150,7 +189,7 @@ class PasienController extends Controller
             'nim_nip' => 'nullable|string|max:50',
             'fakultas' => 'nullable|string|max:100',
             'program_studi' => 'nullable|string|max:100',
-            'pekerjaan' => 'nullable|in:pns,pppk,swasta,wiraswasta,pelajar_mahasiswa,lainnya',
+            'pekerjaan' => 'nullable|in:pns,pppk,swasta,wiraswasta,pelajar_mahasiswa,dosen,tenaga_kependidikan,lainnya',
             'status_perkawinan' => 'nullable|in:belum_kawin,kawin,cerai_hidup,cerai_mati',
             'agama' => 'nullable|in:islam,kristen,katolik,hindu,buddha,konghucu,lainnya',
             'pendidikan_terakhir' => 'nullable|in:sd,smp,sma_smk,d1,d2,d3,d4_s1,s2,s3',

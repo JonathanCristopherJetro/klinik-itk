@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { watch } from 'vue';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import { formatDateToLocalString } from '@/utils/date';
 import type { Pasien } from '@/types';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -62,8 +64,20 @@ const pekerjaanOptions = [
     { label: 'Swasta', value: 'swasta' },
     { label: 'Wiraswasta', value: 'wiraswasta' },
     { label: 'Pelajar/Mahasiswa', value: 'pelajar_mahasiswa' },
+    { label: 'Dosen', value: 'dosen' },
+    { label: 'Tenaga Kependidikan', value: 'tenaga_kependidikan' },
     { label: 'Lainnya', value: 'lainnya' },
 ];
+
+watch(() => form.status_pasien, (newVal) => {
+    if (newVal === 'dosen') {
+        form.pekerjaan = 'dosen';
+    } else if (newVal === 'tendik') {
+        form.pekerjaan = 'tenaga_kependidikan';
+    } else if (newVal === 'mahasiswa') {
+        form.pekerjaan = 'pelajar_mahasiswa';
+    }
+});
 
 const statusPerkawinanOptions = [
     { label: 'Belum Kawin', value: 'belum_kawin' },
@@ -97,7 +111,7 @@ const pendidikanOptions = [
 const submit = () => {
     form.transform((data) => ({
         ...data,
-        tanggal_lahir: data.tanggal_lahir ? data.tanggal_lahir.toISOString().split('T')[0] : null,
+        tanggal_lahir: formatDateToLocalString(data.tanggal_lahir),
     })).put(route('pasien.update', props.pasien.id), {
         onSuccess: () => {
             toast.add({ severity: 'success', summary: 'Berhasil', detail: 'Data pasien berhasil diperbarui', life: 3000 });

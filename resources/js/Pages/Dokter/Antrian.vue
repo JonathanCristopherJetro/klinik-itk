@@ -283,6 +283,16 @@ const closeDialog = () => {
     resetForm();
 };
 
+const getSuratList = (data: any) => {
+    if (data.surat_dokters && data.surat_dokters.length > 0) {
+        return data.surat_dokters;
+    }
+    if (data.surat_dokter) {
+        return [data.surat_dokter];
+    }
+    return [];
+};
+
 const showNomorSuratDialog = ref(false);
 const selectedSuratDokter = ref<any>(null);
 const nomorSuratForm = useForm({
@@ -999,45 +1009,56 @@ const getTipePasienLabel = (tipe: string) => {
                                 </div>
                             </template>
                         </Column>
-                        <Column header="Aksi" style="width: 250px" class="text-center">
+                        <Column header="Surat Dokter / Rujukan" style="width: 260px">
+                            <template #body="{ data }">
+                                <div class="flex flex-col gap-1.5" v-if="getSuratList(data).length > 0">
+                                    <div v-for="surat in getSuratList(data)" :key="surat.id" class="flex items-center justify-between gap-2 p-2 rounded-xl border bg-gray-50/70 border-gray-200/80">
+                                        <div class="flex flex-col">
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md w-max"
+                                                  :class="surat.jenis_surat === 'surat_rujukan' ? 'bg-blue-100 text-blue-700' : (surat.jenis_surat === 'surat_sehat' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')">
+                                                {{ surat.jenis_surat === 'surat_rujukan' ? 'Surat Rujukan' : (surat.jenis_surat === 'surat_sehat' ? 'Surat Sehat' : 'Surat Sakit') }}
+                                            </span>
+                                            <span v-if="surat.nomor_surat" class="text-[9px] font-mono text-gray-500 mt-0.5 truncate max-w-[120px]">
+                                                {{ surat.nomor_surat }}
+                                            </span>
+                                        </div>
+
+                                        <div class="flex items-center gap-1">
+                                            <a
+                                                v-if="surat.nomor_surat"
+                                                :href="route('surat-dokter.pdf', surat.id)"
+                                                target="_blank"
+                                                class="p-button p-component p-button-warning p-button-sm !rounded-lg !text-[10px] !py-1 !px-2.5 shadow-sm hover:shadow font-bold text-white no-underline flex items-center gap-1"
+                                                v-tooltip.top="'Cetak PDF'"
+                                            >
+                                                <i class="pi pi-print text-[10px]"></i>
+                                                <span>Cetak</span>
+                                            </a>
+                                            <Button
+                                                v-if="!surat.nomor_surat && canManageAntrian"
+                                                severity="info"
+                                                class="!rounded-lg !text-[10px] !py-1 !px-2.5 shadow-sm font-bold flex items-center gap-1"
+                                                v-tooltip.top="'Input No. Surat'"
+                                                @click="openNomorSuratDialog(surat)"
+                                            >
+                                                <i class="pi pi-pencil text-[10px]"></i>
+                                                <span>Input No</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span v-else class="text-xs text-gray-400 italic">Tanpa surat</span>
+                            </template>
+                        </Column>
+                        <Column header="Aksi" style="width: 150px" class="text-center">
                             <template #body="{ data }">
                                 <div class="flex gap-2 justify-center">
-                                    <template v-if="data.surat_dokter">
-                                        <a
-                                            v-if="data.surat_dokter.nomor_surat"
-                                            :href="route('surat-dokter.pdf', data.surat_dokter.id)"
-                                            target="_blank"
-                                            class="p-button p-component p-button-warning p-button-sm !rounded-xl !text-[11px] !py-2 !px-4 shadow-sm hover:shadow-md transition-all font-bold text-white no-underline flex items-center justify-center gap-1"
-                                        >
-                                            <i class="pi pi-print"></i>
-                                            <span>Cetak Surat</span>
-                                        </a>
-                                        <Button
-                                            v-else
-                                            disabled
-                                            severity="warning"
-                                            class="!rounded-xl !text-[11px] !py-2 !px-4 shadow-sm font-bold flex items-center justify-center gap-1 opacity-50 cursor-not-allowed"
-                                        >
-                                            <i class="pi pi-print"></i>
-                                            <span>Cetak Surat</span>
-                                        </Button>
-
-                                        <Button
-                                            v-if="!data.surat_dokter.nomor_surat && canManageAntrian"
-                                            severity="info"
-                                            class="!rounded-xl !text-[11px] !py-2 !px-4 shadow-sm hover:shadow-md transition-all font-bold flex items-center justify-center gap-1"
-                                            @click="openNomorSuratDialog(data.surat_dokter)"
-                                        >
-                                            <i class="pi pi-pencil"></i>
-                                            <span>Input No. Surat</span>
-                                        </Button>
-                                    </template>
                                     <Link :href="route('pasien.rekam-medis', data.pasien.id)">
                                         <Button
                                             label="Rekam Medis"
                                             icon="pi pi-folder-open"
                                             severity="info"
-                                            class="!rounded-xl !text-[11px] !py-2 !px-4 shadow-sm hover:shadow-md hover:shadow-blue-100 transition-all font-bold"
+                                            class="!rounded-xl !text-[11px] !py-2 !px-3 shadow-sm hover:shadow-md transition-all font-bold"
                                         />
                                     </Link>
                                     <Button
@@ -1461,19 +1482,19 @@ const getTipePasienLabel = (tipe: string) => {
         <Dialog 
             v-model:visible="showNomorSuratDialog" 
             modal 
-            header="Input Nomor Surat" 
-            :style="{ width: '30rem' }"
+            :header="selectedSuratDokter?.jenis_surat === 'surat_rujukan' ? 'Input Nomor Surat Rujukan Puskesmas' : 'Input Nomor Surat Keterangan Dokter'" 
+            :style="{ width: '32rem' }"
         >
             <div class="space-y-4 pt-2">
-                <p class="text-sm text-gray-600 mb-4">Masukkan nomor urut surat. Format nomor lengkap akan digenerate otomatis.</p>
+                <p class="text-sm text-gray-600 mb-4">Masukkan nomor urut surat. Format nomor lengkap akan digenerate secara otomatis.</p>
                 <div class="flex flex-col gap-2">
-                    <label class="text-sm font-medium text-gray-700">Nomor Surat <span class="text-red-500">*</span></label>
+                    <label class="text-sm font-medium text-gray-700">Nomor Urut Surat <span class="text-red-500">*</span></label>
                     <InputGroup>
                         <InputNumber 
                             v-model="nomorSuratForm.nomor_input" 
                             inputId="withoutgrouping" 
                             :useGrouping="false" 
-                            placeholder="Contoh: 11541"
+                            placeholder="Contoh: 001"
                             :class="{ 'p-invalid': nomorSuratForm.errors.nomor_input }"
                         />
                         <InputGroupAddon>/IT10/TU.03/{{ currentYear }}</InputGroupAddon>
@@ -1484,7 +1505,7 @@ const getTipePasienLabel = (tipe: string) => {
             
             <template #footer>
                 <Button label="Batal" icon="pi pi-times" text @click="showNomorSuratDialog = false" />
-                <Button label="Simpan" icon="pi pi-check" @click="submitNomorSurat" :loading="nomorSuratForm.processing" />
+                <Button label="Simpan Nomor" icon="pi pi-check" @click="submitNomorSurat" severity="success" :loading="nomorSuratForm.processing" />
             </template>
         </Dialog>
     </AppLayout>

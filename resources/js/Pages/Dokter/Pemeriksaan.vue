@@ -81,8 +81,13 @@ const form = useForm({
     resepObat: [] as { obat_id: number; jumlah: number; dosis: string; aturan_pakai: string; keterangan: string }[],
     // Surat Keterangan Dokter
     buat_surat: false,
-    jenis_surat: '' as string,
+    buat_surat_keterangan: false,
+    jenis_surat: 'surat_sakit' as string,
     keperluan_surat: '',
+    // Surat Rujukan Puskesmas
+    buat_surat_rujukan: false,
+    tujuan_rujukan: 'Puskesmas Karang Joang',
+    catatan_rujukan: 'Mohon untuk dilakukan pemeriksaan/perawatan/penatalaksanaan lebih lanjut',
     jumlah_hari_istirahat: 1,
     tanggal_mulai: null as Date | null,
     tanggal_selesai: null as Date | null,
@@ -113,6 +118,11 @@ const prognosisOptions = [
 const butaWarnaOptions = [
     { label: 'Tidak Buta Warna', value: 'Tidak Buta Warna' },
     { label: 'Buta Warna', value: 'Buta Warna' }
+];
+
+const jenisSuratKetOptions = [
+    { label: 'Surat Keterangan Sakit', value: 'surat_sakit' },
+    { label: 'Surat Keterangan Sehat', value: 'surat_sehat' },
 ];
 
 const icd10List = [
@@ -650,114 +660,148 @@ const getTipePasienLabel = (tipe: string) => {
                     </template>
                 </Card>
 
-                <!-- Section 5: Surat Keterangan Dokter (Opsional) -->
-                <Card class="shadow-sm border border-gray-200/80 rounded-2xl bg-white overflow-hidden">
+                <!-- Section 5: Pembuatan Surat Dokter & Rujukan (Opsional) -->
+                <Card class="shadow-sm border border-gray-200/80 rounded-2xl bg-white overflow-hidden space-y-4">
                     <template #title>
                         <div class="flex items-center gap-3 border-b pb-3 border-gray-100">
                             <span class="w-2.5 h-6 bg-amber-500 rounded-full"></span>
-                            <div class="flex items-center gap-3">
-                                <Checkbox v-model="form.buat_surat" :binary="true" inputId="buat_surat" />
-                                <label for="buat_surat" class="text-base font-bold text-gray-800 cursor-pointer">
-                                    Buat Surat Keterangan Dokter
-                                </label>
-                            </div>
+                            <h3 class="text-base font-bold text-gray-800">
+                                Checklist Pembuatan Surat Dokter
+                            </h3>
                         </div>
                     </template>
                     <template #content>
-                        <div v-if="form.buat_surat" class="pt-3 space-y-4">
-                            <div class="bg-amber-50/60 p-5 rounded-2xl border border-amber-200/80 space-y-4">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div class="flex flex-col gap-2">
-                                        <label class="font-semibold text-sm text-gray-700">Jenis Surat <span class="text-red-500">*</span></label>
-                                        <Select
-                                            v-model="form.jenis_surat"
-                                            :options="jenisSuratOptions"
-                                            optionLabel="label"
-                                            optionValue="value"
-                                            placeholder="Pilih jenis surat..."
-                                            class="w-full !rounded-xl bg-white"
-                                            :class="{ 'p-invalid': form.errors.jenis_surat }"
-                                        />
-                                        <small v-if="form.errors.jenis_surat" class="text-red-500">{{ form.errors.jenis_surat }}</small>
+                        <div class="space-y-5 pt-2">
+                            <!-- Checklist 1: Surat Keterangan Dokter (Sakit / Sehat) -->
+                            <div class="border border-amber-200/80 rounded-2xl p-4 bg-amber-50/40 space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <Checkbox v-model="form.buat_surat_keterangan" :binary="true" inputId="buat_surat_keterangan" />
+                                    <label for="buat_surat_keterangan" class="text-sm font-bold text-gray-800 cursor-pointer">
+                                        Buat Surat Keterangan Dokter (Sehat / Sakit)
+                                    </label>
+                                </div>
+
+                                <div v-if="form.buat_surat_keterangan" class="pt-2 space-y-4 border-t border-amber-200/60">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="flex flex-col gap-2">
+                                            <label class="font-semibold text-sm text-gray-700">Jenis Surat Keterangan <span class="text-red-500">*</span></label>
+                                            <Select
+                                                v-model="form.jenis_surat"
+                                                :options="jenisSuratKetOptions"
+                                                optionLabel="label"
+                                                optionValue="value"
+                                                placeholder="Pilih jenis surat..."
+                                                class="w-full !rounded-xl bg-white !border-gray-300"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col gap-2">
+                                            <label class="font-semibold text-sm text-gray-700">Keperluan Surat</label>
+                                            <InputText
+                                                v-model="form.keperluan_surat"
+                                                placeholder="Misal: Izin sakit perkuliahan / kerja..."
+                                                class="w-full !rounded-xl bg-white !border-gray-300 !py-2 text-sm"
+                                            />
+                                        </div>
                                     </div>
+
+                                    <!-- Detail Surat Sakit -->
+                                    <div v-if="form.jenis_surat === 'surat_sakit'" class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-amber-200/60 pt-3">
+                                        <div class="flex flex-col gap-2">
+                                            <label class="font-semibold text-sm text-gray-700">Lama Istirahat</label>
+                                            <InputNumber
+                                                v-model="form.jumlah_hari_istirahat"
+                                                :min="1"
+                                                :max="14"
+                                                suffix=" hari"
+                                                fluid
+                                                inputClass="!rounded-xl !border-gray-300 !py-2 !text-sm bg-white"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col gap-2">
+                                            <label class="font-semibold text-sm text-gray-700">Tanggal Mulai</label>
+                                            <DatePicker
+                                                v-model="form.tanggal_mulai"
+                                                dateFormat="dd/mm/yy"
+                                                placeholder="Pilih tanggal"
+                                                fluid
+                                                inputClass="!rounded-xl !border-gray-300 !py-2 !text-sm bg-white"
+                                            />
+                                        </div>
+                                        <div class="flex flex-col gap-2">
+                                            <label class="font-semibold text-sm text-gray-700">Tanggal Selesai</label>
+                                            <DatePicker
+                                                v-model="form.tanggal_selesai"
+                                                dateFormat="dd/mm/yy"
+                                                placeholder="Pilih tanggal"
+                                                fluid
+                                                inputClass="!rounded-xl !border-gray-300 !py-2 !text-sm bg-white"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <!-- Detail Surat Sehat -->
+                                    <div v-if="form.jenis_surat === 'surat_sehat'" class="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-amber-200/60 pt-3">
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-xs font-semibold text-gray-700">Tinggi Badan (cm)</span>
+                                            <InputNumber v-model="form.tinggi_badan" suffix=" cm" fluid inputClass="!rounded-xl !border-gray-300 !py-2 bg-white" />
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-xs font-semibold text-gray-700">Berat Badan (kg)</span>
+                                            <InputNumber v-model="form.berat_badan" suffix=" kg" fluid inputClass="!rounded-xl !border-gray-300 !py-2 bg-white" />
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-xs font-semibold text-gray-700">Tekanan Darah</span>
+                                            <InputText v-model="form.tekanan_darah" placeholder="120/80" class="w-full !rounded-xl bg-white !border-gray-300 !py-2 text-sm" />
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-xs font-semibold text-gray-700">Nadi (x/menit)</span>
+                                            <InputNumber v-model="form.nadi" fluid inputClass="!rounded-xl !border-gray-300 !py-2 bg-white" />
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-xs font-semibold text-gray-700">Suhu (°C)</span>
+                                            <InputNumber v-model="form.suhu" suffix=" °C" fluid inputClass="!rounded-xl !border-gray-300 !py-2 bg-white" />
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <span class="text-xs font-semibold text-gray-700">Golongan Darah</span>
+                                            <Select v-model="form.golongan_darah" :options="golonganDarahOptions" optionLabel="label" optionValue="value" class="w-full !rounded-xl bg-white !border-gray-300" />
+                                        </div>
+                                        <div class="flex flex-col gap-1 sm:col-span-3">
+                                            <span class="text-xs font-semibold text-gray-700">Buta Warna</span>
+                                            <Select v-model="form.buta_warna" :options="butaWarnaOptions" optionLabel="label" optionValue="value" class="w-full !rounded-xl bg-white !border-gray-300" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Checklist 2: Surat Rujukan Puskesmas -->
+                            <div class="border border-blue-200/80 rounded-2xl p-4 bg-blue-50/40 space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <Checkbox v-model="form.buat_surat_rujukan" :binary="true" inputId="buat_surat_rujukan" />
+                                    <label for="buat_surat_rujukan" class="text-sm font-bold text-gray-800 cursor-pointer">
+                                        Buat Surat Rujukan Puskesmas
+                                    </label>
+                                </div>
+
+                                <div v-if="form.buat_surat_rujukan" class="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-blue-200/60">
                                     <div class="flex flex-col gap-2">
-                                        <label class="font-semibold text-sm text-gray-700">Keperluan Surat</label>
+                                        <label class="font-semibold text-sm text-gray-700">Tujuan Rujukan <span class="text-red-500">*</span></label>
                                         <InputText
-                                            v-model="form.keperluan_surat"
-                                            placeholder="Misal: Izin sakit perkuliahan / kerja..."
-                                            class="w-full !rounded-xl bg-white"
-                                            :class="{ 'p-invalid': form.errors.keperluan_surat }"
-                                        />
-                                        <small v-if="form.errors.keperluan_surat" class="text-red-500">{{ form.errors.keperluan_surat }}</small>
-                                    </div>
-                                </div>
-
-                                <!-- Fields khusus Surat Sakit -->
-                                <div v-if="form.jenis_surat === 'surat_sakit'" class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-amber-200/60 pt-4">
-                                    <div class="flex flex-col gap-2">
-                                        <label class="font-semibold text-sm text-gray-700">Lama Istirahat</label>
-                                        <InputNumber
-                                            v-model="form.jumlah_hari_istirahat"
-                                            :min="1"
-                                            :max="14"
-                                            suffix=" hari"
-                                            class="w-full !rounded-xl bg-white"
+                                            v-model="form.tujuan_rujukan"
+                                            placeholder="Contoh: Puskesmas Karang Joang"
+                                            class="w-full !rounded-xl bg-white !border-gray-300 !py-2 text-sm"
                                         />
                                     </div>
                                     <div class="flex flex-col gap-2">
-                                        <label class="font-semibold text-sm text-gray-700">Tanggal Mulai</label>
-                                        <DatePicker
-                                            v-model="form.tanggal_mulai"
-                                            dateFormat="dd/mm/yy"
-                                            placeholder="Pilih tanggal"
-                                            class="w-full !rounded-xl bg-white"
+                                        <label class="font-semibold text-sm text-gray-700">Dikirim Untuk (Catatan Rujukan)</label>
+                                        <InputText
+                                            v-model="form.catatan_rujukan"
+                                            placeholder="Mohon untuk dilakukan pemeriksaan/perawatan/penatalaksanaan lebih lanjut"
+                                            class="w-full !rounded-xl bg-white !border-gray-300 !py-2 text-sm"
                                         />
-                                    </div>
-                                    <div class="flex flex-col gap-2">
-                                        <label class="font-semibold text-sm text-gray-700">Tanggal Selesai</label>
-                                        <DatePicker
-                                            v-model="form.tanggal_selesai"
-                                            dateFormat="dd/mm/yy"
-                                            placeholder="Pilih tanggal"
-                                            class="w-full !rounded-xl bg-white"
-                                        />
-                                    </div>
-                                </div>
-
-                                <!-- Fields khusus Surat Sehat fisik -->
-                                <div v-if="form.jenis_surat === 'surat_sehat'" class="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t border-amber-200/60 pt-4">
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-xs font-semibold text-gray-700">Tinggi Badan (cm)</span>
-                                        <InputNumber v-model="form.tinggi_badan" suffix=" cm" class="w-full !rounded-xl bg-white" />
-                                    </div>
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-xs font-semibold text-gray-700">Berat Badan (kg)</span>
-                                        <InputNumber v-model="form.berat_badan" suffix=" kg" class="w-full !rounded-xl bg-white" />
-                                    </div>
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-xs font-semibold text-gray-700">Tekanan Darah</span>
-                                        <InputText v-model="form.tekanan_darah" placeholder="120/80" class="w-full !rounded-xl bg-white" />
-                                    </div>
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-xs font-semibold text-gray-700">Nadi (x/menit)</span>
-                                        <InputNumber v-model="form.nadi" class="w-full !rounded-xl bg-white" />
-                                    </div>
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-xs font-semibold text-gray-700">Suhu (°C)</span>
-                                        <InputNumber v-model="form.suhu" suffix=" °C" class="w-full !rounded-xl bg-white" />
-                                    </div>
-                                    <div class="flex flex-col gap-1">
-                                        <span class="text-xs font-semibold text-gray-700">Golongan Darah</span>
-                                        <Select v-model="form.golongan_darah" :options="golonganDarahOptions" optionLabel="label" optionValue="value" class="w-full !rounded-xl bg-white" />
-                                    </div>
-                                    <div class="flex flex-col gap-1 sm:col-span-3">
-                                        <span class="text-xs font-semibold text-gray-700">Buta Warna</span>
-                                        <Select v-model="form.buta_warna" :options="butaWarnaOptions" optionLabel="label" optionValue="value" class="w-full !rounded-xl bg-white" />
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <p v-else class="text-sm text-gray-400 italic pt-2">Centang kotak di atas jika ingin membuat Surat Keterangan Sehat/Sakit untuk pasien.</p>
                     </template>
                 </Card>
 

@@ -133,7 +133,8 @@
 
     <div class="destination">
         <p>Kepada Yth,</p>
-        <p>Sejawat &rarr; Di <strong>{{ $surat->keterangan ?? 'Puskesmas Karang Joang' }}</strong></p>
+        <p>Sejawat</p>
+        <p>Di <strong>{{ $surat->keterangan ?? 'Puskesmas Karang Joang' }}</strong></p>
     </div>
     <div class="clearfix"></div>
 

@@ -117,6 +117,23 @@ class DokterController extends Controller
 
     }
 
+    public function pemeriksaanForm(RekamMedis $rekamMedis)
+    {
+        if ($rekamMedis->status === RekamMedis::STATUS_SIAP_DOKTER) {
+            $rekamMedis->update(['status' => RekamMedis::STATUS_SEDANG_DIPERIKSA]);
+        }
+
+        $rekamMedis->load(['pasien', 'anamnesis', 'anamnesis.perawat']);
+
+        $obats = Obat::where('is_active', true)->where('stok', '>', 0)->orderBy('nama')->get();
+        $tindakans = Tindakan::where('is_active', true)->orderBy('nama')->get();
+
+        return Inertia::render('Dokter/Pemeriksaan', [
+            'rekamMedis' => $rekamMedis,
+            'obats' => $obats,
+            'tindakans' => $tindakans,
+        ]);
+    }
 
     public function storePemeriksaan(Request $request)
     {

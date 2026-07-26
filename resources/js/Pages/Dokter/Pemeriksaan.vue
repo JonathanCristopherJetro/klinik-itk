@@ -523,17 +523,17 @@ const getTipePasienLabel = (tipe: string) => {
                                 label="Tambah Obat" 
                                 icon="pi pi-plus" 
                                 size="small" 
-                                severity="secondary" 
-                                class="!rounded-xl !text-xs font-bold" 
+                                severity="emerald" 
+                                class="!rounded-xl !text-xs font-bold !bg-emerald-50 hover:!bg-emerald-100 !text-emerald-700 !border-emerald-200 shadow-2xs" 
                                 @click="addResepObat" 
                             />
                         </div>
                     </template>
                     <template #content>
-                        <div class="pt-3 space-y-3">
-                            <div v-if="form.resepObat.length === 0" class="text-center py-6 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                        <div class="pt-3 space-y-4">
+                            <div v-if="form.resepObat.length === 0" class="text-center py-8 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
                                 <i class="pi pi-box text-gray-300 text-3xl mb-2"></i>
-                                <p class="text-sm text-gray-500">Belum ada obat yang ditambahkan ke resep.</p>
+                                <p class="text-sm font-medium text-gray-500">Belum ada obat yang ditambahkan ke resep.</p>
                                 <Button 
                                     label="Klik di sini untuk tambah obat" 
                                     icon="pi pi-plus" 
@@ -548,46 +548,102 @@ const getTipePasienLabel = (tipe: string) => {
                             <div 
                                 v-for="(item, index) in form.resepObat" 
                                 :key="index" 
-                                class="p-4 rounded-xl border border-gray-200/80 bg-gray-50/40 grid grid-cols-1 md:grid-cols-12 gap-3 items-center hover:border-teal-200 transition-all"
+                                class="p-4.5 rounded-2xl border border-gray-200/90 bg-gray-50/50 hover:border-teal-300/80 transition-all space-y-3.5 shadow-2xs"
                             >
-                                <div class="md:col-span-4 flex flex-col gap-1">
-                                    <label class="text-xs font-semibold text-gray-600">Obat <span class="text-red-500">*</span></label>
-                                    <select 
-                                        v-model="item.obat_id" 
-                                        class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                                    >
-                                        <option :value="0">Pilih obat...</option>
-                                        <option v-for="obat in props.obats" :key="obat.id" :value="obat.id">
-                                            {{ obat.nama }} ({{ obat.satuan }}) - Stok: {{ obat.stok }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="md:col-span-2 flex flex-col gap-1">
-                                    <label class="text-xs font-semibold text-gray-600">Jumlah <span class="text-red-500">*</span></label>
-                                    <InputNumber v-model="item.jumlah" size="small" :min="1" class="w-full !rounded-xl" inputClass="!py-1.5 !text-center !rounded-xl" />
-                                </div>
-                                <div class="md:col-span-2 flex flex-col gap-1">
-                                    <label class="text-xs font-semibold text-gray-600">Dosis</label>
-                                    <InputText v-model="item.dosis" size="small" placeholder="Cth: 500mg" class="w-full !rounded-xl !py-1.5" />
-                                </div>
-                                <div class="md:col-span-2 flex flex-col gap-1">
-                                    <label class="text-xs font-semibold text-gray-600">Aturan Pakai</label>
-                                    <InputText v-model="item.aturan_pakai" size="small" placeholder="Cth: 3x1 hari" class="w-full !rounded-xl !py-1.5" />
-                                </div>
-                                <div class="md:col-span-1 flex flex-col gap-1">
-                                    <label class="text-xs font-semibold text-gray-600">Ket.</label>
-                                    <InputText v-model="item.keterangan" size="small" placeholder="Sesudah makan" class="w-full !rounded-xl !py-1.5" />
-                                </div>
-                                <div class="md:col-span-1 flex justify-end md:justify-center pt-2 md:pt-4">
+                                <div class="flex items-center justify-between gap-3 border-b border-gray-200/60 pb-2.5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center text-xs font-extrabold">
+                                            {{ index + 1 }}
+                                        </span>
+                                        <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                                            Item Obat #{{ index + 1 }}
+                                        </span>
+                                    </div>
                                     <Button 
                                         icon="pi pi-trash" 
                                         severity="danger" 
                                         text 
                                         rounded 
-                                        class="!w-9 !h-9" 
-                                        v-tooltip.top="'Hapus Item'"
+                                        size="small" 
+                                        class="!w-8 !h-8 text-rose-500 hover:bg-rose-50" 
+                                        v-tooltip.top="'Hapus Obat Ini'"
                                         @click="removeResepObat(index)" 
                                     />
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-start">
+                                    <!-- Field Obat -->
+                                    <div class="md:col-span-8 flex flex-col gap-1.5">
+                                        <label class="text-xs font-semibold text-gray-700">Nama Obat <span class="text-red-500">*</span></label>
+                                        <Select
+                                            v-model="item.obat_id"
+                                            :options="props.obats"
+                                            optionLabel="nama"
+                                            optionValue="id"
+                                            filter
+                                            placeholder="Cari & pilih obat..."
+                                            class="w-full !rounded-xl bg-white !border-gray-300"
+                                        >
+                                            <template #option="slotProps">
+                                                <div class="flex items-center justify-between w-full text-xs py-0.5">
+                                                    <span class="font-medium text-gray-800">
+                                                        {{ slotProps.option.nama }} 
+                                                        <span class="text-gray-400 font-normal">({{ slotProps.option.satuan }})</span>
+                                                    </span>
+                                                    <span 
+                                                        class="px-2 py-0.5 rounded text-[10px] font-bold" 
+                                                        :class="slotProps.option.stok > 10 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'"
+                                                    >
+                                                        Stok: {{ slotProps.option.stok }}
+                                                    </span>
+                                                </div>
+                                            </template>
+                                        </Select>
+                                    </div>
+
+                                    <!-- Field Jumlah -->
+                                    <div class="md:col-span-4 flex flex-col gap-1.5">
+                                        <label class="text-xs font-semibold text-gray-700">Jumlah <span class="text-red-500">*</span></label>
+                                        <InputNumber 
+                                            v-model="item.jumlah" 
+                                            :min="1" 
+                                            fluid 
+                                            class="w-full bg-white !rounded-xl" 
+                                            inputClass="!py-2 !text-center !rounded-xl !border-gray-300" 
+                                        />
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                                    <!-- Field Dosis -->
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-xs font-semibold text-gray-600">Dosis</label>
+                                        <InputText 
+                                            v-model="item.dosis" 
+                                            placeholder="Contoh: 500 mg" 
+                                            class="w-full !rounded-xl !py-2 bg-white !border-gray-300 !text-xs" 
+                                        />
+                                    </div>
+
+                                    <!-- Field Aturan Pakai -->
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-xs font-semibold text-gray-600">Aturan Pakai</label>
+                                        <InputText 
+                                            v-model="item.aturan_pakai" 
+                                            placeholder="Contoh: 3x1 sehari" 
+                                            class="w-full !rounded-xl !py-2 bg-white !border-gray-300 !text-xs" 
+                                        />
+                                    </div>
+
+                                    <!-- Field Keterangan -->
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-xs font-semibold text-gray-600">Keterangan Tambahan</label>
+                                        <InputText 
+                                            v-model="item.keterangan" 
+                                            placeholder="Contoh: Sesudah makan" 
+                                            class="w-full !rounded-xl !py-2 bg-white !border-gray-300 !text-xs" 
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

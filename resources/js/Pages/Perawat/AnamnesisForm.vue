@@ -270,6 +270,18 @@ const getTipePasienLabel = (tipe?: string) => {
     };
     return labels[tipe] || tipe;
 };
+
+const formatTindakLanjut = (val?: string) => {
+    if (!val) return '';
+    const map: Record<string, string> = {
+        rawat_jalan: 'Rawat Jalan',
+        rujuk: 'Rujuk Faskes 1',
+        rujuk_faskes_1: 'Rujuk Faskes 1',
+        faskes_1: 'Rujuk Faskes 1',
+        edukasi: 'Edukasi'
+    };
+    return map[val.toLowerCase()] || val.replace(/_/g, ' ');
+};
 </script>
 
 <template>
@@ -639,11 +651,11 @@ const getTipePasienLabel = (tipe?: string) => {
                         </div>
                     </div>
 
-                    <!-- SECTION 3 KHUSUS SCREENING: CATATAN & TINDAK LANJUT SKRINING -->
+                    <!-- SECTION 3 KHUSUS SCREENING: TINDAK LANJUT SKRINING -->
                     <div v-if="isScreening" class="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-xs space-y-5">
                         <div class="flex items-center gap-3 border-b border-slate-100 pb-3.5">
                             <span class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 font-bold text-xs flex items-center justify-center shrink-0">3</span>
-                            <h3 class="font-bold text-slate-800 text-base">Catatan & Tindak Lanjut Skrining</h3>
+                            <h3 class="font-bold text-slate-800 text-base">Tindak Lanjut Skrining</h3>
                         </div>
 
                         <div class="space-y-4">
@@ -660,33 +672,21 @@ const getTipePasienLabel = (tipe?: string) => {
                                 </label>
                             </div>
 
-                            <!-- Keluhan Utama (Opsional untuk Skrining) -->
-                            <div class="flex flex-col gap-1.5">
-                                <label class="font-bold text-xs text-slate-700">Catatan Keluhan / Keterangan Skrining</label>
-                                <Textarea v-model="form.keluhan_utama" rows="2" autoResize placeholder="Catatan keluhan (opsional)" class="w-full !rounded-xl !border-slate-300 !resize-none" />
-                            </div>
-
                             <!-- Tindak Lanjut Skrining -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div class="flex flex-col gap-1.5">
-                                    <label class="font-bold text-xs text-slate-700">Tindak Lanjut Skrining</label>
-                                    <Select
-                                        v-model="form.tindak_lanjut"
-                                        :options="[
-                                            {label: 'Rawat Jalan', value: 'rawat_jalan'},
-                                            {label: 'Rujuk Faskes 1', value: 'rujuk'},
-                                            {label: 'Edukasi', value: 'edukasi'}
-                                        ]"
-                                        optionLabel="label"
-                                        optionValue="value"
-                                        placeholder="Pilih Tindak Lanjut"
-                                        class="w-full !rounded-xl !border-slate-300"
-                                    />
-                                </div>
-                                <div class="flex flex-col gap-1.5">
-                                    <label class="font-bold text-xs text-slate-700">Keterangan Tindak Lanjut</label>
-                                    <InputText v-model="form.keterangan_tindak_lanjut" placeholder="Catatan tambahan tindak lanjut" class="w-full !rounded-xl !border-slate-300" />
-                                </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="font-bold text-xs text-slate-700">Tindak Lanjut Skrining</label>
+                                <Select
+                                    v-model="form.tindak_lanjut"
+                                    :options="[
+                                        {label: 'Rawat Jalan', value: 'rawat_jalan'},
+                                        {label: 'Rujuk Faskes 1', value: 'rujuk'},
+                                        {label: 'Edukasi', value: 'edukasi'}
+                                    ]"
+                                    optionLabel="label"
+                                    optionValue="value"
+                                    placeholder="Pilih Tindak Lanjut"
+                                    class="w-full !rounded-xl !border-slate-300"
+                                />
                             </div>
                         </div>
                     </div>
@@ -859,7 +859,7 @@ const getTipePasienLabel = (tipe?: string) => {
                                     <div v-if="item.anamnesis.tindak_lanjut || item.anamnesis.keterangan_tindak_lanjut" class="pt-1">
                                         <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Tindak Lanjut</span>
                                         <p class="text-[11px] text-slate-700 italic">
-                                            {{ item.anamnesis.tindak_lanjut ? item.anamnesis.tindak_lanjut.toUpperCase() : '' }}
+                                            {{ formatTindakLanjut(item.anamnesis.tindak_lanjut) }}
                                             <span v-if="item.anamnesis.keterangan_tindak_lanjut"> - {{ item.anamnesis.keterangan_tindak_lanjut }}</span>
                                         </p>
                                     </div>

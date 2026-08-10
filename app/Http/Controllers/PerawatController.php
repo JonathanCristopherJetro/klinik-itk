@@ -267,18 +267,18 @@ class PerawatController extends Controller
 
             $actionType = $request->input('action_type', 'lanjut');
 
-            if ($rm->jenis_layanan === 'screening' && in_array($rm->status, [RekamMedis::STATUS_MENUNGGU_PERAWAT, RekamMedis::STATUS_PROSES_ANAMNESIS, RekamMedis::STATUS_SIAP_DOKTER])) {
+            if ($actionType === 'draft') {
                 $rm->update([
-                    'status' => RekamMedis::STATUS_SELESAI,
+                    'status' => RekamMedis::STATUS_PROSES_ANAMNESIS,
                     'perawat_id' => auth()->id(),
                 ]);
-            } elseif (in_array($rm->status, [RekamMedis::STATUS_MENUNGGU_PERAWAT, RekamMedis::STATUS_PROSES_ANAMNESIS])) {
-                if ($actionType === 'draft') {
+            } else {
+                if ($rm->jenis_layanan === 'screening' && in_array($rm->status, [RekamMedis::STATUS_MENUNGGU_PERAWAT, RekamMedis::STATUS_PROSES_ANAMNESIS, RekamMedis::STATUS_SIAP_DOKTER])) {
                     $rm->update([
-                        'status' => RekamMedis::STATUS_PROSES_ANAMNESIS,
+                        'status' => RekamMedis::STATUS_SELESAI,
                         'perawat_id' => auth()->id(),
                     ]);
-                } else {
+                } elseif (in_array($rm->status, [RekamMedis::STATUS_MENUNGGU_PERAWAT, RekamMedis::STATUS_PROSES_ANAMNESIS])) {
                     $rm->update([
                         'status' => RekamMedis::STATUS_SIAP_DOKTER,
                         'perawat_id' => auth()->id(),
